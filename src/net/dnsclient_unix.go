@@ -2,14 +2,13 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build darwin dragonfly freebsd linux netbsd openbsd solaris
+// +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
 
 // DNS client: see RFC 1035.
 // Has to be linked into package net for Dial.
 
 // TODO(rsc):
 //	Could potentially handle many outstanding lookups faster.
-//	Could have a small cache.
 //	Random UDP source port (net.Dial should do that for us).
 //	Random request IDs.
 
@@ -24,7 +23,21 @@ import (
 	"sync"
 	"time"
 
-	"golang_org/x/net/dns/dnsmessage"
+	"internal/x/net/dns/dnsmessage"
+)
+
+var (
+	errLameReferral              = errors.New("lame referral")
+	errCannotUnmarshalDNSMessage = errors.New("cannot unmarshal DNS message")
+	errCannotMarshalDNSMessage   = errors.New("cannot marshal DNS message")
+	errServerMisbehaving         = errors.New("server misbehaving")
+	errInvalidDNSResponse        = errors.New("invalid DNS response")
+	errNoAnswerFromDNSServer     = errors.New("no answer from DNS server")
+
+	// errServerTemporarlyMisbehaving is like errServerMisbehaving, except
+	// that when it gets translated to a DNSError, the IsTemporary field
+	// gets set to true.
+	errServerTemporarlyMisbehaving = errors.New("server misbehaving")
 )
 
 var (
