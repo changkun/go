@@ -23,7 +23,7 @@ import (
 	"time"
 )
 
-var savedSupportedSignatureAlgorithmsTLS12 = supportedSignatureAlgorithmsTLS12
+var savedSupportedSignatureAlgorithmsTLS12 = defaultSupportedSignatureAlgorithmsTLS12
 
 func init() {
 	// TLS 1.3 is opt-in for Go 1.12, and RSA-PSS is disabled in TLS 1.2, but we
@@ -31,7 +31,7 @@ func init() {
 	// "PSS-Disabled" recordings test the disabled behavior. See Issue 30055.
 	tls13Support.Do(func() {}) // defuse the sync.Once
 	tls13Support.cached = true
-	supportedSignatureAlgorithmsTLS12 = supportedSignatureAlgorithms
+	defaultSupportedSignatureAlgorithmsTLS12 = defaultSupportedSignatureAlgorithms
 }
 
 var rsaCertPEM = `-----BEGIN CERTIFICATE-----

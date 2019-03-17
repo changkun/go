@@ -8,6 +8,7 @@ package sha256
 
 import (
 	"bytes"
+	"crypto/internal/boring"
 	"crypto/rand"
 	"encoding"
 	"fmt"
@@ -216,6 +217,9 @@ func TestBlockSize(t *testing.T) {
 
 // Tests that blockGeneric (pure Go) and block (in assembly for some architectures) match.
 func TestBlockGeneric(t *testing.T) {
+	if boring.Enabled {
+		t.Skip("BoringCrypto doesn't expose digest")
+	}
 	gen, asm := New().(*digest), New().(*digest)
 	buf := make([]byte, BlockSize*20) // arbitrary factor
 	rand.Read(buf)

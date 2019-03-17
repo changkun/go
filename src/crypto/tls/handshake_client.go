@@ -114,7 +114,15 @@ NextCipherSuite:
 	}
 
 	if hello.vers >= VersionTLS12 {
-		hello.supportedSignatureAlgorithms = supportedSignatureAlgorithms
+		// Use the full set of signature algorithms, even if TLS 1.3 is not
+		// being negotiated, so that TLS 1.2 behavior does not depend on TLS 1.3
+		// being enabled. This allows RSA-PSS as a client with TLS 1.2, but on
+		// the other hand we can't predict what the server will pick when we do
+		// advertise TLS 1.3, so we might end up with TLS 1.2 + RSA-PSS anyway.
+		hello.supportedSignatureAlgorithms = supportedSignatureAlgorithms(VersionTLS13)
+	}
+	if testingOnlyForceClientHelloSignatureAlgorithms != nil {
+		hello.supportedSignatureAlgorithms = testingOnlyForceClientHelloSignatureAlgorithms
 	}
 
 	var params ecdheParameters
@@ -573,7 +581,7 @@ func (hs *clientHandshakeState) doFullHandshake() error {
 			return fmt.Errorf("tls: client certificate private key of type %T does not implement crypto.Signer", chainToSend.PrivateKey)
 		}
 
-		signatureAlgorithm, sigType, hashFunc, err := pickSignatureAlgorithm(key.Public(), certReq.supportedSignatureAlgorithms, supportedSignatureAlgorithmsTLS12, c.vers)
+		signatureAlgorithm, sigType, hashFunc, err := pickSignatureAlgorithm(key.Public(), certReq.supportedSignatureAlgorithms, supportedSignatureAlgorithms(c.vers), c.vers)
 		if err != nil {
 			c.sendAlert(alertInternalError)
 			return err
@@ -822,6 +830,8 @@ func (c *Conn) verifyServerCertificate(certificates [][]byte) error {
 
 	if !c.config.InsecureSkipVerify {
 		opts := x509.VerifyOptions{
+			IsBoring: isBoringCertificate,
+
 			Roots:         c.config.RootCAs,
 			CurrentTime:   c.config.time(),
 			DNSName:       c.config.ServerName,

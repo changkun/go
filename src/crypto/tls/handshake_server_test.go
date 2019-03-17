@@ -1220,9 +1220,9 @@ func TestHandshakeServerPSSDisabled(t *testing.T) {
 
 	// Restore the default signature algorithms, disabling RSA-PSS in TLS 1.2,
 	// and check that handshakes still work.
-	testSupportedSignatureAlgorithmsTLS12 := supportedSignatureAlgorithmsTLS12
-	defer func() { supportedSignatureAlgorithmsTLS12 = testSupportedSignatureAlgorithmsTLS12 }()
-	supportedSignatureAlgorithmsTLS12 = savedSupportedSignatureAlgorithmsTLS12
+	testSupportedSignatureAlgorithmsTLS12 := defaultSupportedSignatureAlgorithmsTLS12
+	defer func() { defaultSupportedSignatureAlgorithmsTLS12 = testSupportedSignatureAlgorithmsTLS12 }()
+	defaultSupportedSignatureAlgorithmsTLS12 = savedSupportedSignatureAlgorithmsTLS12
 
 	runServerTestTLS12(t, test)
 	runServerTestTLS13(t, test)
@@ -1465,9 +1465,9 @@ func TestClientAuth(t *testing.T) {
 
 	// Restore the default signature algorithms, disabling RSA-PSS in TLS 1.2,
 	// and check that handshakes still work.
-	testSupportedSignatureAlgorithmsTLS12 := supportedSignatureAlgorithmsTLS12
-	defer func() { supportedSignatureAlgorithmsTLS12 = testSupportedSignatureAlgorithmsTLS12 }()
-	supportedSignatureAlgorithmsTLS12 = savedSupportedSignatureAlgorithmsTLS12
+	testSupportedSignatureAlgorithmsTLS12 := defaultSupportedSignatureAlgorithmsTLS12
+	defer func() { defaultSupportedSignatureAlgorithmsTLS12 = testSupportedSignatureAlgorithmsTLS12 }()
+	defaultSupportedSignatureAlgorithmsTLS12 = savedSupportedSignatureAlgorithmsTLS12
 
 	t.Run("PSSDisabled", func(t *testing.T) {
 		config := testConfig.Clone()
@@ -1803,9 +1803,9 @@ T+E0J8wlH24pgwQHzy7Ko2qLwn1b5PW8ecrlvP1g
 
 	// With RSA-PSS disabled and TLS 1.2, this should work.
 
-	testSupportedSignatureAlgorithmsTLS12 := supportedSignatureAlgorithmsTLS12
-	defer func() { supportedSignatureAlgorithmsTLS12 = testSupportedSignatureAlgorithmsTLS12 }()
-	supportedSignatureAlgorithmsTLS12 = savedSupportedSignatureAlgorithmsTLS12
+	testSupportedSignatureAlgorithmsTLS12 := defaultSupportedSignatureAlgorithmsTLS12
+	defer func() { defaultSupportedSignatureAlgorithmsTLS12 = testSupportedSignatureAlgorithmsTLS12 }()
+	defaultSupportedSignatureAlgorithmsTLS12 = savedSupportedSignatureAlgorithmsTLS12
 
 	serverConfig := testConfig.Clone()
 	serverConfig.Certificates = []Certificate{cert}

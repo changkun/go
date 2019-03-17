@@ -868,9 +868,9 @@ func TestHandshakeClientCertPSSDisabled(t *testing.T) {
 
 	// Restore the default signature algorithms, disabling RSA-PSS in TLS 1.2,
 	// and check that handshakes still work.
-	testSupportedSignatureAlgorithmsTLS12 := supportedSignatureAlgorithmsTLS12
-	defer func() { supportedSignatureAlgorithmsTLS12 = testSupportedSignatureAlgorithmsTLS12 }()
-	supportedSignatureAlgorithmsTLS12 = savedSupportedSignatureAlgorithmsTLS12
+	testSupportedSignatureAlgorithmsTLS12 := defaultSupportedSignatureAlgorithmsTLS12
+	defer func() { defaultSupportedSignatureAlgorithmsTLS12 = testSupportedSignatureAlgorithmsTLS12 }()
+	defaultSupportedSignatureAlgorithmsTLS12 = savedSupportedSignatureAlgorithmsTLS12
 
 	// Use t.Run to ensure the defer runs after all parallel tests end.
 	t.Run("1024", func(t *testing.T) {

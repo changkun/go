@@ -188,6 +188,11 @@ var errNotParsed = errors.New("x509: missing ASN.1 contents; use ParseCertificat
 // VerifyOptions contains parameters for Certificate.Verify. It's a structure
 // because other PKIX verification APIs have ended up needing many options.
 type VerifyOptions struct {
+	// IsBoring is a validity check for BoringCrypto.
+	// If not nil, it will be called to check whether a given certificate
+	// can be used for constructing verification chains.
+	IsBoring func(*Certificate) bool
+
 	DNSName       string
 	Intermediates *CertPool
 	Roots         *CertPool // if nil, the system roots are used
@@ -697,6 +702,13 @@ func (c *Certificate) isValid(certType int, currentChain []*Certificate, opts *V
 		if numIntermediates > c.MaxPathLen {
 			return CertificateInvalidError{c, TooManyIntermediates, ""}
 		}
+	}
+
+	if opts.IsBoring != nil && !opts.IsBoring(c) {
+		// IncompatibleUsage is not quite right here,
+		// but it's also the "no chains found" error
+		// and is close enough.
+		return CertificateInvalidError{c, IncompatibleUsage, ""}
 	}
 
 	return nil

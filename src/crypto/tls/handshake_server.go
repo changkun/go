@@ -463,7 +463,7 @@ func (hs *serverHandshakeState) doFullHandshake() error {
 		}
 		if c.vers >= VersionTLS12 {
 			certReq.hasSignatureAlgorithm = true
-			certReq.supportedSignatureAlgorithms = supportedSignatureAlgorithmsTLS12
+			certReq.supportedSignatureAlgorithms = supportedSignatureAlgorithms(c.vers)
 		}
 
 		// An empty list of certificateAuthorities signals to
@@ -559,7 +559,7 @@ func (hs *serverHandshakeState) doFullHandshake() error {
 		}
 
 		// Determine the signature type.
-		_, sigType, hashFunc, err := pickSignatureAlgorithm(pub, []SignatureScheme{certVerify.signatureAlgorithm}, supportedSignatureAlgorithmsTLS12, c.vers)
+		_, sigType, hashFunc, err := pickSignatureAlgorithm(pub, []SignatureScheme{certVerify.signatureAlgorithm}, supportedSignatureAlgorithms(c.vers), c.vers)
 		if err != nil {
 			c.sendAlert(alertIllegalParameter)
 			return err
@@ -723,6 +723,8 @@ func (c *Conn) processCertsFromClient(certificate Certificate) error {
 
 	if c.config.ClientAuth >= VerifyClientCertIfGiven && len(certs) > 0 {
 		opts := x509.VerifyOptions{
+			IsBoring: isBoringCertificate,
+
 			Roots:         c.config.ClientCAs,
 			CurrentTime:   c.config.time(),
 			Intermediates: x509.NewCertPool(),

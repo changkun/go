@@ -7,6 +7,7 @@ package tls
 import (
 	"container/list"
 	"crypto"
+	"crypto/internal/boring"
 	"crypto/rand"
 	"crypto/sha512"
 	"crypto/x509"
@@ -160,11 +161,11 @@ const (
 	signatureRSAPSS
 )
 
-// supportedSignatureAlgorithms contains the signature and hash algorithms that
+// defaultSupportedSignatureAlgorithms contains the signature and hash algorithms that
 // the code advertises as supported in a TLS 1.2+ ClientHello and in a TLS 1.2+
 // CertificateRequest. The two fields are merged to match with TLS 1.3.
 // Note that in TLS 1.2, the ECDSA algorithms are not constrained to P-256, etc.
-var supportedSignatureAlgorithms = []SignatureScheme{
+var defaultSupportedSignatureAlgorithms = []SignatureScheme{
 	PSSWithSHA256,
 	PSSWithSHA384,
 	PSSWithSHA512,
@@ -179,7 +180,7 @@ var supportedSignatureAlgorithms = []SignatureScheme{
 }
 
 // RSA-PSS is disabled in TLS 1.2 for Go 1.12. See Issue 30055.
-var supportedSignatureAlgorithmsTLS12 = supportedSignatureAlgorithms[3:]
+var defaultSupportedSignatureAlgorithmsTLS12 = defaultSupportedSignatureAlgorithms[3:]
 
 // helloRetryRequestRandom is set as the Random value of a ServerHello
 // to signal that the message is actually a HelloRetryRequest.
@@ -751,6 +752,9 @@ func (c *Config) time() time.Time {
 }
 
 func (c *Config) cipherSuites() []uint16 {
+	if needFIPS() {
+		return fipsCipherSuites(c)
+	}
 	s := c.CipherSuites
 	if s == nil {
 		s = defaultCipherSuites()
@@ -769,6 +773,9 @@ var supportedVersions = []uint16{
 func (c *Config) supportedVersions(isClient bool) []uint16 {
 	versions := make([]uint16, 0, len(supportedVersions))
 	for _, v := range supportedVersions {
+		if needFIPS() && (v < fipsMinVersion(c) || v > fipsMaxVersion(c)) {
+			continue
+		}
 		if c != nil && c.MinVersion != 0 && v < c.MinVersion {
 			continue
 		}
@@ -851,6 +858,9 @@ func supportedVersionsFromMax(maxVersion uint16) []uint16 {
 var defaultCurvePreferences = []CurveID{X25519, CurveP256, CurveP384, CurveP521}
 
 func (c *Config) curvePreferences() []CurveID {
+	if needFIPS() {
+		return fipsCurvePreferences(c)
+	}
 	if c == nil || len(c.CurvePreferences) == 0 {
 		return defaultCurvePreferences
 	}
@@ -1111,7 +1121,8 @@ func initDefaultCipherSuites() {
 		hasGCMAsm = hasGCMAsmAMD64 || hasGCMAsmARM64 || hasGCMAsmS390X
 	)
 
-	if hasGCMAsm {
+	if hasGCMAsm || boring.Enabled {
+		// If BoringCrypto is enabled, always prioritize AES-GCM.
 		// If AES-GCM hardware is provided then prioritise AES-GCM
 		// cipher suites.
 		topCipherSuites = []uint16{
